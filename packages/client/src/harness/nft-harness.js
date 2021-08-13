@@ -54,12 +54,14 @@ export default class NftHarness extends LitElement {
         </action-card>
       
         <action-card title="NFT - Mint NFT" description="Mint an NFT into an account using the Tenant's data" action="mintNFT"
-          method="post" fields="acct recipient nftName">
+          method="post" fields="acct recipient ipfshash nftName">
           <account-widget field="acct" label="Tenant Account">
           </account-widget>
           <account-widget field="recipient" label="Recipient Account">
           </account-widget>
-          <text-widget field="nftName" label="Name of NFT" placeholder="Jacob Rocks"></text-widget>
+          <text-widget field="ipfshash" label="ipfshash of NFT" placeholder="Qmf4A8d4U4jEs44WYgNaPwwJStje6XD1CpMVAAK98sf7oG">
+          </text-widget>
+          <text-widget field="nftName" label="metadata of NFT" placeholder=""></text-widget>
         </action-card>
       
         <action-card title="NFT - Transfer NFT" description="Transfer an NFT from Giver --> Recipient" action="transferNFT"
@@ -84,6 +86,12 @@ export default class NftHarness extends LitElement {
           <text-widget field="id" label="ID" placeholder="0"> </text-widget>
         </action-card>
       
+        <action-card title="NFT - Get NFT IPFSHash" description="Get NFT IPFSHash" action="getNFTIPFSHash" method="get"
+          fields="acct id">
+          <account-widget field="acct" label="Account">
+          </account-widget>
+          <text-widget field="id" label="ID" placeholder="0"> </text-widget>
+        </action-card>
         <!-- Market -->
       
         <action-card title="Marketplace - Provision Account" description="Set up an account to have a SaleCollection"

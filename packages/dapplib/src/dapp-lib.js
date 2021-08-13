@@ -106,6 +106,7 @@ module.exports = class DappLib {
       'nft_mint_nft',
       {
         recipient: { value: data.recipient, type: t.Address },
+        ipfshash: { value: data.ipfshash, type: t.String },
         metadata: { value: [{ key: 'name', value: data.nftName }], type: t.Dictionary({ key: t.String, value: t.String }) }
       }
     );
@@ -179,6 +180,28 @@ module.exports = class DappLib {
     return {
       type: DappLib.DAPP_RESULT_OBJECT,
       label: 'NFT Metadata',
+      result: result.callData
+    }
+  }
+
+  static async getNFTIPFSHash(data) {
+
+    let config = DappLib.getConfig();
+    let result = await Blockchain.get({
+      config: config,
+      roles: {
+      }
+    },
+      'nft_get_nft_ipfshash',
+      {
+        acct: { value: data.acct, type: t.Address },
+        id: { value: parseInt(data.id), type: t.UInt64 }
+      }
+    );
+    console.log(result.callData)
+    return {
+      type: DappLib.DAPP_RESULT_STRING,
+      label: 'NFT IPFSHash',
       result: result.callData
     }
   }

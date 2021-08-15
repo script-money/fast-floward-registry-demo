@@ -5,7 +5,8 @@ const ClipboardJS = require('clipboard');
 const BN = require('bn.js'); // Required for injected code
 const manifest = require('../manifest.json');
 const t = require('@onflow/types');
-
+const ipfsClient = require('ipfs-http-client');
+const bs58 = require('bs58');
 
 module.exports = class DappLib {
 
@@ -95,8 +96,22 @@ module.exports = class DappLib {
   }
 
   static async mintNFT(data) {
-
+    let folder = false;
     let config = DappLib.getConfig();
+    config.ipfs = {
+      host: 'ipfs.infura.io',
+      protocol: 'https',
+      port: 5001
+    }
+
+    // Push files to IPFS
+    let ipfsResults = await DappLib.ipfsUpload(config, data.files, folder, (bytes) => {
+      console.log("bytes", bytes);
+    });
+
+    let ipfsResult = ipfsResults[0]
+    console.log("ipfsResult", ipfsResult);
+
     let result = await Blockchain.post({
       config: config,
       roles: {
@@ -106,7 +121,7 @@ module.exports = class DappLib {
       'nft_mint_nft',
       {
         recipient: { value: data.recipient, type: t.Address },
-        ipfshash: { value: data.ipfshash, type: t.String },
+        ipfshash: { value: ipfsResult.cid.string, type: t.String },
         metadata: { value: [{ key: 'name', value: data.nftName }], type: t.Dictionary({ key: t.String, value: t.String }) }
       }
     );
@@ -273,6 +288,55 @@ module.exports = class DappLib {
     }
   }
 
+  static async ipfsUpload(config, files, wrapWithDirectory, progressCallback) {
+    let results = [];
+    if (files.length < 1) {
+      return results;
+    }
+    let ipfs = ipfsClient(config.ipfs);
+    let filesToUpload = [];
+    files.map((file) => {
+      filesToUpload.push({
+        path: file.name,
+        content: file
+      })
+    });
+    const options = {
+      wrapWithDirectory: wrapWithDirectory,
+      pin: true,
+      progress: progressCallback
+    }
+
+    for await (const result of ipfs.add(filesToUpload, options)) {
+      if (wrapWithDirectory && result.path !== "") {
+        continue;
+      }
+      results.push(
+        Object.assign({}, result, DappLib._decodeMultihash(result.cid.string))
+      );
+    }
+    return results;
+  }
+
+  static formatIpfsHash(a) {
+    let config = DappLib.getConfig();
+    let url = `${config.ipfs.protocol}://${config.ipfs.host}/ipfs/${a}`;
+    return `<strong class="teal lighten-5 p-1 black-text number copy-target" title="${url}"><a href="${url}" target="_new">${a.substr(0, 6)}...${a.substr(a.length - 4, 4)}</a></strong>${DappLib.addClippy(a)}`;
+  }
+
+  /**
+   * Partition multihash string into object representing multihash
+   * https://github.com/saurfang/ipfs-multihash-on-solidity/blob/master/src/multihash.js
+   */
+  static _decodeMultihash(multihash) {
+    const decoded = bs58.decode(multihash);
+
+    return {
+      digest: `0x${decoded.slice(2).toString('hex')}`,
+      hashFunction: decoded[0],
+      digestLength: decoded[1],
+    };
+  }
 
 
 
